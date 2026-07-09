@@ -1,16 +1,18 @@
-"""Minimal ``__init__.py`` wiring: coordinators built, never-go-empty on setup.
+"""``__init__.py`` wiring: coordinators + platforms built, torn down cleanly.
 
-No entity platforms yet (later phase) — this only exercises
-``async_setup_entry``/``async_unload_entry`` building/tearing down the
-coordinators dict on ``entry.runtime_data``.
+Exercises ``async_setup_entry``/``async_unload_entry`` building/tearing down
+the coordinators dict on ``entry.runtime_data`` *and* the forwarded
+``sensor``/``binary_sensor`` platforms, plus the reload-on-subentry-change
+listener.
 """
 
 from __future__ import annotations
 
 from types import MappingProxyType
 
-from homeassistant.config_entries import ConfigSubentry, ConfigSubentryData
+from homeassistant.config_entries import ConfigEntryState, ConfigSubentry, ConfigSubentryData
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
@@ -86,6 +88,78 @@ async def test_setup_and_unload_build_and_teardown_coordinators(
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     await hass.async_block_till_done()
+
+
+async def test_unload_removes_entities_shuts_down_coordinators_and_listeners(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Unload must be a clean teardown: entities, coordinator listeners/timers,
+
+    and the reload update-listener registered in ``async_setup_entry`` should
+    all be gone afterwards (no lingering state to leak into a future setup).
+    """
+    entry = _hub_with_all(hass)
+    aioclient_mock.get(FINGRID_DATA_URL, json=_FINGRID_PAYLOAD)
+    aioclient_mock.get(FMI_FORECAST_URL, json=_FMI_PAYLOAD)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+    runtime = entry.runtime_data
+    combined = next(iter(runtime.combined.values()))
+    assert combined._unsubs  # subscribed to its sources while loaded
+
+    reg = er.async_get(hass)
+    entity_ids = [
+        eid for eid in reg.entities if reg.entities[eid].config_entry_id == entry.entry_id
+    ]
+    assert entity_ids  # sensor/binary_sensor entities were registered
+    assert any(hass.states.get(eid) is not None for eid in entity_ids)
+
+    assert await hass.config_entries.async_unload(entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.NOT_LOADED
+    assert combined._unsubs == []  # coordinator listeners cleaned up
+    assert not entry.update_listeners  # the reload listener unregistered itself
+    # HA leaves a restorable "unavailable" placeholder rather than removing the
+    # state outright; either way, no entity is still reporting live data.
+    assert all(hass.states.get(eid).state == "unavailable" for eid in entity_ids)
+
+
+async def test_adding_a_subentry_reloads_the_entry(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    """Subentry mutation fires the entry's update listener, which reloads."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={"name": "Hub"},
+        unique_id=DOMAIN,
+        subentries_data=[
+            ConfigSubentryData(
+                subentry_type=SUBENTRY_TYPE_FINGRID,
+                title="Fingrid",
+                unique_id=None,
+                data={CONF_API_KEY: "k"},
+            )
+        ],
+    )
+    entry.add_to_hass(hass)
+    aioclient_mock.get(FINGRID_DATA_URL, json=_FINGRID_PAYLOAD)
+    aioclient_mock.get(FMI_FORECAST_URL, json=_FMI_PAYLOAD)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+    assert len(entry.runtime_data.sources) == 1
+
+    hass.config_entries.async_add_subentry(
+        entry,
+        ConfigSubentry(
+            data=MappingProxyType({}), subentry_type=SUBENTRY_TYPE_FMI, title="FMI", unique_id=None
+        ),
+    )
+    await hass.async_block_till_done()
+
+    assert entry.state is ConfigEntryState.LOADED
+    assert len(entry.runtime_data.sources) == 2  # reload picked up the new FMI source
 
 
 async def test_setup_survives_dead_source_with_no_cache(

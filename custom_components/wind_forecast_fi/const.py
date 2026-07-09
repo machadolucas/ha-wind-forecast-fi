@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from homeassistant.const import Platform
+
 DOMAIN = "wind_forecast_fi"
+
+# Entity platforms forwarded by the hub config entry.
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.BINARY_SENSOR]
 
 # ── Subentry types (hub + one subentry per source, plus a combined one) ─────
 SUBENTRY_TYPE_FINGRID = "fingrid"

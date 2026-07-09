@@ -116,5 +116,20 @@
       "title": "Wind Forecast Finland: {source} forecast stale",
       "description": "The {source} source hasn't fetched successfully in a while, so it's serving an old cached forecast (or none at all). Check connectivity/API key and the Home Assistant logs. This clears automatically once a fetch succeeds again."
     }
+  },
+  "entity": {
+    "sensor": {
+      "forecast": {
+        "name": "Wind forecast"
+      },
+      "next_24h": {
+        "name": "Wind forecast next 24 h"
+      }
+    },
+    "binary_sensor": {
+      "stale": {
+        "name": "Forecast data stale"
+      }
+    }
   }
 }
