@@ -40,7 +40,7 @@
             "horizon_hours": "Forecast horizon"
           },
           "data_description": {
-            "api_key": "Free to obtain at https://data.fingrid.fi — register, then create an API key with access to open datasets. Dataset 245 (wind power generation forecast) needs no special permission beyond a basic account.",
+            "api_key": "Free to obtain from Fingrid's open data portal — register, then create an API key with access to open datasets. Dataset 245 (wind power generation forecast) needs no special permission beyond a basic account.",
             "update_interval": "How often to poll Fingrid, in minutes (floor 5 — Fingrid's own data refreshes roughly every 15 minutes, so polling much faster just wastes your rate limit).",
             "stale_after_hours": "How long without a successful fetch before this source is flagged stale (drives the diagnostic stale sensor and, after a longer prolonged outage, a repair issue).",
             "lookback_hours": "How many hours of already-past forecast buckets to keep fetching/displaying, for context on dashboards.",
@@ -49,7 +49,7 @@
         }
       },
       "error": {
-        "invalid_api_key": "That API key was rejected by Fingrid (401/403). Double-check it at https://data.fingrid.fi.",
+        "invalid_api_key": "That API key was rejected by Fingrid (401/403). Double-check it on Fingrid's open data portal.",
         "cannot_connect": "Couldn't reach Fingrid to validate the key (timeout or network error). Check connectivity and try again."
       },
       "abort": {
