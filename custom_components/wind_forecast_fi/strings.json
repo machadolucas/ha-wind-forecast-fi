@@ -1,0 +1,120 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Wind Forecast Finland",
+        "description": "Set up the hub. Only one is needed — after creating it, add a Fingrid and/or FMI source (and optionally a combined view) from the integration's page.",
+        "data": {
+          "name": "Name"
+        }
+      },
+      "reconfigure": {
+        "title": "Wind Forecast Finland",
+        "description": "Rename the hub.",
+        "data": {
+          "name": "Name"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Wind Forecast Finland is already configured — only one hub is needed.",
+      "reconfigure_successful": "Hub updated."
+    }
+  },
+  "config_subentries": {
+    "fingrid": {
+      "initiate_flow": {
+        "user": "Add Fingrid source",
+        "reconfigure": "Reconfigure Fingrid source"
+      },
+      "entry_type": "Fingrid source",
+      "step": {
+        "init": {
+          "title": "Fingrid wind forecast",
+          "description": "Fingrid dataset 245 publishes Finland's wind-generation forecast in 15-minute buckets. Your key is validated with a small live test-fetch before this source is saved.",
+          "data": {
+            "api_key": "Fingrid API key",
+            "update_interval": "Update interval",
+            "stale_after_hours": "Stale after",
+            "lookback_hours": "Lookback window",
+            "horizon_hours": "Forecast horizon"
+          },
+          "data_description": {
+            "api_key": "Free to obtain at https://data.fingrid.fi — register, then create an API key with access to open datasets. Dataset 245 (wind power generation forecast) needs no special permission beyond a basic account.",
+            "update_interval": "How often to poll Fingrid, in minutes (floor 5 — Fingrid's own data refreshes roughly every 15 minutes, so polling much faster just wastes your rate limit).",
+            "stale_after_hours": "How long without a successful fetch before this source is flagged stale (drives the diagnostic stale sensor and, after a longer prolonged outage, a repair issue).",
+            "lookback_hours": "How many hours of already-past forecast buckets to keep fetching/displaying, for context on dashboards.",
+            "horizon_hours": "How many hours ahead to fetch. Fingrid typically publishes out to roughly 36-74 hours depending on the dataset run."
+          }
+        }
+      },
+      "error": {
+        "invalid_api_key": "That API key was rejected by Fingrid (401/403). Double-check it at https://data.fingrid.fi.",
+        "cannot_connect": "Couldn't reach Fingrid to validate the key (timeout or network error). Check connectivity and try again."
+      },
+      "abort": {
+        "already_configured": "A Fingrid source is already configured for this hub — only one is needed.",
+        "reconfigure_successful": "Fingrid source updated."
+      }
+    },
+    "fmi": {
+      "initiate_flow": {
+        "user": "Add FMI source",
+        "reconfigure": "Reconfigure FMI source"
+      },
+      "entry_type": "FMI source",
+      "step": {
+        "init": {
+          "title": "FMI wind forecast",
+          "description": "The Finnish Meteorological Institute publishes an hourly Finland wind-power forecast on a public CDN endpoint — no API key needed.",
+          "data": {
+            "update_interval": "Update interval",
+            "stale_after_hours": "Stale after"
+          },
+          "data_description": {
+            "update_interval": "How often to poll the FMI CDN, in minutes (floor 5 — FMI's own forecast refreshes roughly every 15-60 minutes).",
+            "stale_after_hours": "How long without a successful fetch before this source is flagged stale (drives the diagnostic stale sensor and, after a longer prolonged outage, a repair issue)."
+          }
+        }
+      },
+      "abort": {
+        "already_configured": "An FMI source is already configured for this hub — only one is needed.",
+        "reconfigure_successful": "FMI source updated."
+      }
+    },
+    "combined": {
+      "initiate_flow": {
+        "user": "Add combined view",
+        "reconfigure": "Reconfigure combined view"
+      },
+      "entry_type": "Combined view",
+      "step": {
+        "init": {
+          "title": "Combined wind forecast",
+          "description": "Picks one source as primary and, optionally, fills true gaps in it from a secondary source. The two forecasts are never averaged — their methodologies disagree, so blending would match neither.",
+          "data": {
+            "primary": "Primary source",
+            "secondary": "Secondary source (optional)",
+            "gap_fill": "Fill gaps from the secondary source"
+          },
+          "data_description": {
+            "primary": "The source whose forecast wins whenever both sources cover the same hour.",
+            "secondary": "Used only to fill hours the primary source doesn't cover (a real gap, e.g. an outage or a shorter horizon) — never to average with the primary.",
+            "gap_fill": "When off, the combined view is a clean passthrough of the primary source only (still falls back to cache the same way a single source does)."
+          }
+        }
+      },
+      "abort": {
+        "already_configured": "A combined view is already configured for this hub — only one is needed.",
+        "no_sources": "Add a Fingrid and/or FMI source first — the combined view needs at least one to merge.",
+        "reconfigure_successful": "Combined view updated."
+      }
+    }
+  },
+  "issues": {
+    "source_stale": {
+      "title": "Wind Forecast Finland: {source} forecast stale",
+      "description": "The {source} source hasn't fetched successfully in a while, so it's serving an old cached forecast (or none at all). Check connectivity/API key and the Home Assistant logs. This clears automatically once a fetch succeeds again."
+    }
+  }
+}
