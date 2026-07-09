@@ -1,14 +1,18 @@
-"""FMI wind-power forecast CDN response parsing.
+"""FMI wind-power forecast CDN response parsing + fetch.
 
-Pure parsing only — the HTTP client (``FmiClient``) is added in the
-coordinator phase; this module just needs to be importable by it, hence the
-exception class and URL constant live here already.
+The parser is pure; ``async_fetch_fmi`` is a thin async HTTP client that may
+import ``aiohttp`` but never ``homeassistant`` — the coordinator layer
+supplies the (HA-shared) session and turns failures into the never-go-empty
+contract described in the plan.
 """
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 from statistics import median
+
+import aiohttp
 
 from .models import ForecastPoint
 
@@ -17,6 +21,7 @@ FMI_FORECAST_URL = (
 )
 
 _FALLBACK_STEP = timedelta(hours=1)
+_FETCH_TIMEOUT_S = 30
 
 
 class FmiApiError(Exception):
@@ -68,3 +73,31 @@ def parse_fmi_response(payload: dict) -> list[ForecastPoint]:
         end = starts[i + 1] if i + 1 < len(starts) else start + typical_step
         points.append(ForecastPoint(start=start, end=end, value_mw=value_mw))
     return points
+
+
+async def async_fetch_fmi(session: aiohttp.ClientSession) -> list[ForecastPoint]:
+    """Fetch the public FMI wind-forecast CDN endpoint and return parsed points.
+
+    Raises :class:`FmiApiError` on any non-200 response, network failure,
+    timeout, or unparsable body — the coordinator decides what to do with a
+    cached fallback, never this module. No API key is involved (public CDN).
+    """
+    try:
+        async with (
+            asyncio.timeout(_FETCH_TIMEOUT_S),
+            session.get(FMI_FORECAST_URL) as resp,
+        ):
+            if resp.status != 200:
+                raise FmiApiError(f"FMI API error: HTTP {resp.status}")
+            try:
+                payload = await resp.json(content_type=None)
+            except (aiohttp.ContentTypeError, ValueError) as err:
+                raise FmiApiError(f"FMI returned unparsable JSON: {err}") from err
+    except FmiApiError:
+        raise
+    except TimeoutError as err:
+        raise FmiApiError("FMI request timed out") from err
+    except aiohttp.ClientError as err:
+        raise FmiApiError(f"FMI request failed: {err}") from err
+
+    return parse_fmi_response(payload)
