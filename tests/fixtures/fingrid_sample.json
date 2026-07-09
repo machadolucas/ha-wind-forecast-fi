@@ -1,0 +1,12 @@
+{
+  "data": [
+    {"datasetId": 245, "startTime": "2026-07-09T13:45:00.000Z", "endTime": "2026-07-09T14:00:00.000Z", "value": 913.1},
+    {"datasetId": 245, "startTime": "2026-07-09T13:30:00.000Z", "endTime": "2026-07-09T13:45:00.000Z", "value": 932.1},
+    {"datasetId": 245, "startTime": "2026-07-09T13:15:00.000Z", "endTime": "2026-07-09T13:30:00.000Z", "value": 947.1},
+    {"datasetId": 245, "startTime": "2026-07-09T13:00:00.000Z", "endTime": "2026-07-09T13:15:00.000Z", "value": 963.5},
+    {"datasetId": 245, "startTime": "2026-07-09T12:45:00.000Z", "endTime": "2026-07-09T13:00:00.000Z", "value": 995.3},
+    {"datasetId": 245, "startTime": "2026-07-09T12:30:00.000Z", "endTime": "2026-07-09T12:45:00.000Z", "value": 1007.5},
+    {"datasetId": 245, "startTime": "2026-07-09T12:15:00.000Z", "endTime": "2026-07-09T12:30:00.000Z", "value": 1013.3},
+    {"datasetId": 245, "startTime": "2026-07-09T12:00:00.000Z", "endTime": "2026-07-09T12:15:00.000Z", "value": 1013.3}
+  ]
+}
