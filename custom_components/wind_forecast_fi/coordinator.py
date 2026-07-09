@@ -92,6 +92,11 @@ class SourceCoordinator(DataUpdateCoordinator[list[ForecastPoint]]):
         age = dt_util.utcnow() - self.last_successful_fetch
         return age > timedelta(hours=self.stale_after_hours)
 
+    @property
+    def failures(self) -> int:
+        """Consecutive fetch failures since the last success (diagnostics)."""
+        return self._failures
+
     async def async_seed_from_store(self) -> None:
         """Load the persisted snapshot before the first refresh (best-effort).
 
@@ -250,6 +255,14 @@ class CombinedCoordinator(DataUpdateCoordinator[list[ForecastPoint]]):
         if self.secondary is None:
             return self.primary.stale
         return self.primary.stale and self.secondary.stale
+
+    @property
+    def failures(self) -> int:
+        """Sum of contributing sources' failure counts (diagnostics only)."""
+        total = self.primary.failures
+        if self.secondary is not None:
+            total += self.secondary.failures
+        return total
 
     @callback
     def async_recompute(self) -> None:

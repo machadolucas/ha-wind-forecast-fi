@@ -24,8 +24,8 @@ jobs:
       - name: Ruff format check
         run: ruff format --check .
       - name: Pytest
-        # --cov-fail-under is added once the HA-side tests exist (later phase).
         run: >-
           pytest
           --cov=custom_components/wind_forecast_fi
           --cov-report=term-missing
+          --cov-fail-under=90
