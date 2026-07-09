@@ -1,7 +1,9 @@
 {
   "domain": "wind_forecast_fi",
   "name": "Wind Forecast Finland",
-  "codeowners": ["@machadolucas"],
+  "codeowners": [
+    "@machadolucas"
+  ],
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/machadolucas/ha-wind-forecast-fi",
@@ -9,5 +11,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/machadolucas/ha-wind-forecast-fi/issues",
   "requirements": [],
-  "version": "0.6.0"
+  "version": "1.0.0"
 }
