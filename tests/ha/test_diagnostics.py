@@ -29,8 +29,10 @@ _FINGRID_PAYLOAD = {
 
 
 async def test_diagnostics_redacts_api_key_and_reports_health(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, freezer
 ) -> None:
+    # Keep the dated forecast payload inside the coordinator's retention window.
+    freezer.move_to("2026-07-09T12:00:00+00:00")
     entry = MockConfigEntry(
         domain=DOMAIN,
         data={"name": "Hub"},
@@ -63,7 +65,7 @@ async def test_diagnostics_redacts_api_key_and_reports_health(
     assert health["stale"] is False
     assert health["failures"] == 0
     assert health["n_points"] == 2
-    assert health["last_successful_fetch"] is not None
+    assert health["last_successful_fetch"] == "2026-07-09T12:00:00+00:00"
     assert health["horizon_start"] is not None
     assert health["horizon_end"] is not None
 

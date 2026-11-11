@@ -242,8 +242,10 @@ async def test_repair_issue_created_after_prolonged_failure_and_cleared_on_recov
 
 
 async def test_fmi_coordinator_fetch(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, freezer
 ) -> None:
+    # Keep the dated forecast payload inside the coordinator's retention window.
+    freezer.move_to("2026-07-09T12:00:00+00:00")
     entry = _hub_with_fmi(hass)
     subentry = _fingrid_subentry(entry)
     coordinator = FmiCoordinator(hass, entry, subentry)
@@ -256,6 +258,7 @@ async def test_fmi_coordinator_fetch(
 
     assert coordinator.last_update_success is True
     assert len(coordinator.points) == 2
+    assert coordinator.last_successful_fetch == datetime(2026, 7, 9, 12, tzinfo=UTC)
 
 
 # ── Combined coordinator: merge + reactive recompute + aggregation ──────────
