@@ -226,10 +226,14 @@ before renaming/removing `forecast`'s keys.
 
 ## Branding / icon
 
-`brands/` holds `icon.svg` only for now (no rendered PNGs yet — unlike the
-sibling repos, this one hasn't gone through an icon design pass). HACS/HA load
-integration icons only from the `home-assistant/brands` repo (no repo-local or
-manifest override) or a `custom_components/<domain>/brand/icon.png` layout the
-`hacs/action` check falls back to. Until either exists, `validate.yaml`'s
-`hacs` job explicitly `ignore: brands` — remove that once brand assets are
-in place (see the sibling repos' identical open TODO).
+Home Assistant 2026.3 and newer load the bundled integration icon from
+`custom_components/wind_forecast_fi/brand/icon.png` (256 × 256) and
+`icon@2x.png` (512 × 512). The high-resolution artwork is kept at
+`brands/icon-master.png`; `brands/icon.svg` remains as legacy artwork.
+The root `brands/` directory is not the integration's runtime asset location.
+
+Local branding requires no submission to `home-assistant/brands` and no
+manifest icon override. Older Home Assistant versions retain their existing
+icon fallback; this cosmetic update does not raise the supported HA minimum
+in `hacs.json`. The current HACS brand validator accepts the bundled
+`brand/icon.png`, so the validation workflow no longer ignores `brands`.

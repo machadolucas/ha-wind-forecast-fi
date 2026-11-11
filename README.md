@@ -389,6 +389,15 @@ or point both at `sensor.combined_wind_forecast` and
 `sensor.fingrid_wind_forecast`/`sensor.fmi_wind_forecast` to compare a single
 source against the merged view.
 
+## Integration icon
+
+Home Assistant 2026.3 and newer use the bundled icon in
+[`custom_components/wind_forecast_fi/brand/`](custom_components/wind_forecast_fi/brand/).
+The package contains 256 px and 512 px PNGs; the high-resolution original is
+[`brands/icon-master.png`](brands/icon-master.png). Existing files under
+`brands/` are retained as legacy artwork. This cosmetic update leaves the
+integration's minimum Home Assistant version unchanged.
+
 ## Development
 
 ```bash
