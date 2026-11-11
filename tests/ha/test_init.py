@@ -71,8 +71,10 @@ def _hub_with_all(hass: HomeAssistant) -> MockConfigEntry:
 
 
 async def test_setup_and_unload_build_and_teardown_coordinators(
-    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker, freezer
 ) -> None:
+    # Keep the dated forecast payload inside the coordinator's retention window.
+    freezer.move_to("2026-07-09T12:00:00+00:00")
     entry = _hub_with_all(hass)
     aioclient_mock.get(FINGRID_DATA_URL, json=_FINGRID_PAYLOAD)
     aioclient_mock.get(FMI_FORECAST_URL, json=_FMI_PAYLOAD)
@@ -83,6 +85,7 @@ async def test_setup_and_unload_build_and_teardown_coordinators(
     runtime = entry.runtime_data
     assert len(runtime.sources) == 2
     assert len(runtime.combined) == 1
+    assert all(source.points for source in runtime.sources.values())
     combined = next(iter(runtime.combined.values()))
     assert combined.points  # merged from both healthy sources
 
