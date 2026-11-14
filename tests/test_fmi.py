@@ -1,8 +1,4 @@
-"""Unit tests for FMI response parsing (no Home Assistant).
-
-Same "load under its real dotted name" trick as test_fingrid.py, since fmi.py
-also does ``from .models import ForecastPoint``.
-"""
+"""Test the source parser in an isolated package without importing Home Assistant."""
 
 from __future__ import annotations
 
@@ -10,11 +6,18 @@ import importlib.util
 import json
 import pathlib
 import sys
+import types
 from datetime import UTC, datetime, timedelta
 
 _ROOT = pathlib.Path(__file__).resolve().parents[1]
 _PATH = _ROOT / "custom_components" / "wind_forecast_fi" / "fmi.py"
-_MODNAME = "custom_components.wind_forecast_fi.fmi"
+# Relative imports resolve here without executing the integration's __init__.py.
+_PACKAGE = "_wind_forecast_unit"
+if _PACKAGE not in sys.modules:
+    package = types.ModuleType(_PACKAGE)
+    package.__path__ = [str(_PATH.parent)]
+    sys.modules[_PACKAGE] = package
+_MODNAME = f"{_PACKAGE}.fmi"
 _spec = importlib.util.spec_from_file_location(_MODNAME, _PATH)
 fmi = importlib.util.module_from_spec(_spec)
 sys.modules[_MODNAME] = fmi

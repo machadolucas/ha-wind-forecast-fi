@@ -1,11 +1,4 @@
-"""Unit tests for Fingrid response parsing (no Home Assistant).
-
-fingrid.py has an internal relative import (``from .models import
-ForecastPoint``), so — unlike the fully standalone test_models.py — it is
-loaded under its *real* dotted module name. That makes Python resolve
-``.models`` via the normal namespace-package lookup (repo root is on
-``sys.path`` via conftest.py) instead of raising "no known parent package".
-"""
+"""Test the source parser in an isolated package without importing Home Assistant."""
 
 from __future__ import annotations
 
@@ -13,11 +6,18 @@ import importlib.util
 import json
 import pathlib
 import sys
+import types
 from datetime import UTC, datetime
 
 _ROOT = pathlib.Path(__file__).resolve().parents[1]
 _PATH = _ROOT / "custom_components" / "wind_forecast_fi" / "fingrid.py"
-_MODNAME = "custom_components.wind_forecast_fi.fingrid"
+# Relative imports resolve here without executing the integration's __init__.py.
+_PACKAGE = "_wind_forecast_unit"
+if _PACKAGE not in sys.modules:
+    package = types.ModuleType(_PACKAGE)
+    package.__path__ = [str(_PATH.parent)]
+    sys.modules[_PACKAGE] = package
+_MODNAME = f"{_PACKAGE}.fingrid"
 _spec = importlib.util.spec_from_file_location(_MODNAME, _PATH)
 fingrid = importlib.util.module_from_spec(_spec)
 sys.modules[_MODNAME] = fingrid

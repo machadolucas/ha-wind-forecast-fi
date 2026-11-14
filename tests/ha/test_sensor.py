@@ -253,7 +253,9 @@ async def test_combined_device_and_sensors_merge_both_sources(
         sid for sid, s in entry.subentries.items() if s.subentry_type == SUBENTRY_TYPE_COMBINED
     )
 
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, combined_id)})
+    device = dr.async_get(hass).async_get_device_by_identifier(
+        (DOMAIN, combined_id), entry.entry_id
+    )
     assert device is not None
     assert device.name == "Combined"
 

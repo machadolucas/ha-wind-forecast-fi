@@ -5,8 +5,9 @@ Working notes for AI agents and future-me. Read this before changing code.
 **Status (beta):** all features below are implemented and covered by tests
 (run them — see Dev workflow). Built incrementally per the approved plan at
 `~/.claude/plans/in-home-assistant-i-composed-newell.md` (the *why*; this file
-is the *how*). Tests run under Python **3.13** (Home Assistant doesn't support
-3.14 yet).
+is the *how*). The locked test environment uses Python 3.14.10 and
+HA 2026.11.1; the runtime minimum remains in `hacs.json`. See the README
+for the temporary test-plugin compatibility boundary.
 
 ## What this is
 
@@ -140,20 +141,12 @@ path unchanged.
   `pytest-homeassistant-custom-component`) — config flow, coordinator,
   sensor, binary_sensor, diagnostics, init.
 - **Keep `models.py`/`fingrid.py`/`fmi.py` HA-free** — that's what makes the
-  pure suite runnable with only `pytest` installed, no HA dependency tree.
-- **The dotted-module-name nuance**: pure tests load their target module
-  directly via `importlib.util.spec_from_file_location`, bypassing the
-  package's `__init__.py` (which pulls in `homeassistant` transitively via
-  `.coordinator`). `test_models.py` can load `models.py` under an *arbitrary*
-  `sys.modules` name (`"wf_models"`) because it has zero internal imports.
-  `fingrid.py`/`fmi.py` do `from .models import ForecastPoint` — a relative
-  import — so they **must** be loaded under their real dotted name
-  (`"custom_components.wind_forecast_fi.fingrid"`); loading them under a
-  fake name breaks Python's "no known parent package" resolution for the
-  relative import. `tests/conftest.py` puts the repo root on `sys.path` so
-  that dotted name resolves as a normal (implicit) namespace package. If you
-  add a new pure module with its own relative import, load it the
-  `fingrid.py`/`fmi.py` way, not the `models.py` way.
+  pure suite runnable with `pytest` and `aiohttp`, without the HA dependency tree.
+- Pure parser tests use an isolated `_wind_forecast_unit` package whose path
+  points to the integration directory. Their relative `.models` imports resolve
+  there without executing the HA-bound `__init__.py` or replacing real integration
+  modules used by the HA suite. `test_models.py` loads its dependency-free module
+  directly as `wf_models`.
 - `__init__.py`'s own docstring explains the mirror-image constraint on the
   *production* side: `.coordinator` (which imports `.fingrid`/`.fmi`) is
   imported lazily *inside* `async_setup_entry`, not at module level, so that
@@ -163,10 +156,9 @@ path unchanged.
 ## Dev workflow
 
 ```bash
-uv venv --python 3.13 .venv313
-uv pip install --python .venv313/bin/python -r requirements_test.txt
-.venv313/bin/python -m pytest --cov=custom_components/wind_forecast_fi --cov-fail-under=90
-.venv313/bin/ruff check . && .venv313/bin/ruff format --check .
+uv sync --locked
+uv run pytest --cov=custom_components/wind_forecast_fi --cov-fail-under=90
+uv run ruff check . && uv run ruff format --check .
 ```
 
 CI (`.github/workflows/test.yaml` + `validate.yaml`) runs the same pytest/ruff

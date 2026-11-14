@@ -400,12 +400,27 @@ integration's minimum Home Assistant version unchanged.
 
 ## Development
 
+The locked development environment targets CPython 3.14.10 and the installed
+Home Assistant 2026.11.1. The integration's runtime minimum in `hacs.json` and
+its Python 3.13 lint target are unchanged. HA owns its runtime libraries.
+
+The latest test plugin, 0.13.375, still pins HA 2026.10.4. The only uv override
+is Home Assistant 2026.11.1. Root conftest imports HA before the plugin to
+install its httpx2 aliases, and supplies the plugin's removed logger helper
+with a stub that raises if called. No HA runtime APIs are replaced. When HA
+and the plugin are absent, pure tests still run without importing them. Remove
+these import adapters and the override when a compatible plugin is published.
+
+
 ```bash
-uv venv --python 3.13 .venv313
-uv pip install --python .venv313/bin/python -r requirements_test.txt
-.venv313/bin/python -m pytest
-.venv313/bin/ruff check . && .venv313/bin/ruff format --check .
+uv sync --locked
+uv run pytest
+uv run ruff check . && uv run ruff format --check .
 ```
+
+Validation on 2026-11-14: 76 full-suite tests passed with 96.27% coverage;
+33 pure tests also passed in an environment without Home Assistant. Ruff lint
+and formatting passed. Runtime files and installed v1.0.1 are unchanged.
 
 The forecast model and both source parsers
 ([`models.py`](custom_components/wind_forecast_fi/models.py),
